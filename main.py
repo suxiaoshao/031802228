@@ -1,7 +1,6 @@
-import sys
-
 import jieba.analyse
 import numpy as np
+import sys
 
 
 # 获取一个文本的 tfidf dict
@@ -34,30 +33,35 @@ def calculate_similarity(source_tfidf_list: [float], copy_tfidf_list: [float]) -
             np.linalg.norm(source_tfidf_array) * np.linalg.norm(copy_tfidf_array))
 
 
+# 写入文件
 def write_consequence_to_file(similarity: float, path: str):
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(str(similarity))
+        f.write(str(round(similarity, 2)))
 
 
 def main():
-    [source_content, copy_content] = read_file()
-    ans_file = sys.argv[3]
+    source_path = sys.argv[1]
+    copy_path = sys.argv[2]
+    ans_path = sys.argv[3]
+    similarity = get_similarity(source_path, copy_path)
+    write_consequence_to_file(similarity, ans_path)
+
+
+# 计算主过程
+def get_similarity(source_path: str, copy_path: str) -> float:
+    source_content = read_file(source_path)
+    copy_content = read_file(copy_path)
     source_tfidf_dict = get_tfidf_dict(source_content)
     copy_tfidf_dict = get_tfidf_dict(copy_content)
     [source_tfidf_list, copy_tfidf_list] = get_tfidf_list(source_tfidf_dict, copy_tfidf_dict)
-    similarity = calculate_similarity(source_tfidf_list, copy_tfidf_list)
-    write_consequence_to_file(similarity, ans_file)
+    return calculate_similarity(source_tfidf_list, copy_tfidf_list)
 
 
 # 读取文件返回两个文件地址
-def read_file() -> [str]:
-    source_file = sys.argv[1]
-    copy_file = sys.argv[2]
-    with open(source_file, 'r', encoding='utf-8') as f:
-        source_content = f.read()
-    with open(copy_file, 'r', encoding='utf-8') as f:
-        copy_content = f.read()
-    return [source_content, copy_content]
+def read_file(path: str) -> str:
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    return content
 
 
 if __name__ == '__main__':

@@ -1,5 +1,7 @@
 import sys
+
 import jieba.analyse
+import numpy as np
 
 
 # 获取一个文本的 tfidf dict
@@ -24,15 +26,30 @@ def get_tfidf_list(source_tfidf_dict: {float}, copy_tfidf_dict: {float}) -> [[fl
     return [source_tfidf_list, copy_tfidf_list]
 
 
+# 计算结果
+def calculate_similarity(source_tfidf_list: [float], copy_tfidf_list: [float]) -> float:
+    source_tfidf_array = np.array(source_tfidf_list)
+    copy_tfidf_array = np.array(copy_tfidf_list)
+    return np.dot(source_tfidf_array, copy_tfidf_array, out=None) / (
+            np.linalg.norm(source_tfidf_array) * np.linalg.norm(copy_tfidf_array))
+
+
+def write_consequence_to_file(similarity: float, path: str):
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(str(similarity))
+
+
 def main():
     [source_content, copy_content] = read_file()
     ans_file = sys.argv[3]
     source_tfidf_dict = get_tfidf_dict(source_content)
     copy_tfidf_dict = get_tfidf_dict(copy_content)
     [source_tfidf_list, copy_tfidf_list] = get_tfidf_list(source_tfidf_dict, copy_tfidf_dict)
-    print(source_tfidf_list, copy_tfidf_list)
+    similarity = calculate_similarity(source_tfidf_list, copy_tfidf_list)
+    write_consequence_to_file(similarity, ans_file)
 
 
+# 读取文件返回两个文件地址
 def read_file() -> [str]:
     source_file = sys.argv[1]
     copy_file = sys.argv[2]

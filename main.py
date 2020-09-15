@@ -1,41 +1,36 @@
 import sys
-
-import jieba
-
-
-def get_all_cut(source_cut: dict, copy_cut: dict) -> dict:
-    result = {}
-    for item in source_cut:
-        result[item] = {
-            "source_count": source_cut[item],
-            "copy_count": copy_cut[item] if item in copy_cut else 0
-        }
-    for item in copy_cut:
-        if item not in result:
-            result[item] = {
-                "source_count": 0,
-                "copy_count": copy_cut[item]
-            }
-    return result
+import jieba.analyse
 
 
-def cut_content(content: str) -> dict:
-    result_list = list(jieba.cut(content))
-    filter_list = ['\n', '，', '？', ' ', '、', '《', '》', '。', '“', '”', '；', '：', '’', '！']
-    result_list = list(filter(lambda x: x not in filter_list, result_list))
-    result_dict = {}
-    for item in result_list:
-        result_dict[item] = result_dict[item] + 1 if item in result_dict else 1
-    return result_dict
+# 获取一个文本的 tfidf dict
+def get_tfidf_dict(content: str) -> {float}:
+    tfidf_dict = {}
+    for word, tfidf in jieba.analyse.extract_tags(content, topK=0, withWeight=True):
+        tfidf_dict[word] = tfidf
+    return tfidf_dict
+
+
+# 获取两个 tfidf dict 的 list
+def get_tfidf_list(source_tfidf_dict: {float}, copy_tfidf_dict: {float}) -> [[float]]:
+    source_tfidf_list = []
+    copy_tfidf_list = []
+    for item in source_tfidf_dict:
+        source_tfidf_list.append(source_tfidf_dict[item])
+        copy_tfidf_list.append(copy_tfidf_dict[item] if item in copy_tfidf_dict else 0)
+    for item in copy_tfidf_dict:
+        if item not in source_tfidf_dict:
+            source_tfidf_list.append(0)
+            copy_tfidf_list.append(copy_tfidf_dict[item])
+    return [source_tfidf_list, copy_tfidf_list]
 
 
 def main():
     [source_content, copy_content] = read_file()
     ans_file = sys.argv[3]
-    source_cut = cut_content(source_content)
-    copy_cut = cut_content(copy_content)
-    all_cut = get_all_cut(source_cut, copy_cut)
-    print(all_cut)
+    source_tfidf_dict = get_tfidf_dict(source_content)
+    copy_tfidf_dict = get_tfidf_dict(copy_content)
+    [source_tfidf_list, copy_tfidf_list] = get_tfidf_list(source_tfidf_dict, copy_tfidf_dict)
+    print(source_tfidf_list, copy_tfidf_list)
 
 
 def read_file() -> [str]:

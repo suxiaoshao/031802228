@@ -18,6 +18,7 @@
 搞懂了之后就比较简单了，打出代码
 
 ```python
+import os
 from typing import List, Dict
 
 import jieba.analyse
@@ -38,6 +39,8 @@ def get_similarity(source_path: str, copy_path: str) -> float:
 
 # 读取文件返回两个文件地址
 def read_file(path: str) -> str:
+    if not os.path.exists(path):
+        raise ValueError('文件不存在')
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
     return content
@@ -48,6 +51,8 @@ def get_tfidf_dict(content: str) -> Dict[str, float]:
     tfidf_dict = {}
     for word, tfidf in jieba.analyse.extract_tags(content, topK=0, withWeight=True):
         tfidf_dict[word] = tfidf
+    if len(tfidf_dict) == 0:
+        raise ValueError('无效文本')
     return tfidf_dict
 
 
@@ -76,11 +81,15 @@ def calculate_similarity(source_tfidf_list: List[float], copy_tfidf_list: List[f
 
 # 写入文件
 def write_consequence_to_file(similarity: float, path: str):
+    if not os.path.exists(path):
+        raise ValueError('文件不存在')
     with open(path, 'w', encoding='utf-8') as f:
         f.write(str(round(similarity, 2)))
 
 
 def main():
+    if len(sys.argv) < 4:
+        raise ValueError('参数缺失')
     [source_path, copy_path, ans_path] = sys.argv[1:]
     similarity = get_similarity(source_path, copy_path)
     write_consequence_to_file(similarity, ans_path)
@@ -120,3 +129,71 @@ def get_tfidf_dict(content: str) -> Dict[str, float]:
 把 get_tfidf_dict 改成这样,再使用 profile 发现性能没有差别，所以这个应该是 jieba 分词的时间消耗,难以优化，考虑这样性能就可以了,我就没有继续优化。
 
 ![优化后](https://img2020.cnblogs.com/blog/2145446/202009/2145446-20200916154022199-1041502967.png)
+
+## 计算模块部分单元测试展示
+
+单元测试代码
+
+```python
+import os
+
+import main
+
+
+def test():
+    copy_paths = './copy'
+    origin_path = './origin.txt'
+    for path in os.listdir(copy_paths):
+        print(f'{path}:', main.get_similarity(f'{copy_paths}/{path}', origin_path))
+
+    # 参数缺失
+    res = os.system(f'python main.py {origin_path}')
+    print(res)
+
+    # 无效文本
+    res = os.system(f'python main.py {origin_path} ./empty.txt ./result.txt')
+    print(res)
+
+    # 文件不存在
+    res = os.system(f'python main.py ./2.txt ./empty.txt ./result.txt')
+    print(res)
+
+
+if __name__ == '__main__':
+    test()
+```
+
+结果如图
+
+![测试结果](https://img2020.cnblogs.com/blog/2145446/202009/2145446-20200916163711766-1354354706.png)
+
+![测试结果](https://img2020.cnblogs.com/blog/2145446/202009/2145446-20200916163749417-666709538.png)
+
+因为我没有多余数据，所以直接使用给的样例数据测试,结果大致再范围内。
+
+## 计算模块部分异常处理说明
+
+我想到了有三种错误
+
+1. 参数缺失
+
+   ```python
+   if len(sys.argv) < 4:
+           raise ValueError('参数缺失')
+   ```
+
+2. 文件不存在
+
+   ```python
+   if not os.path.exists(path):
+       raise ValueError('文件不存在')
+   ```
+
+3. 无效文本
+
+   ```python
+   if len(tfidf_dict) == 0:
+       raise ValueError('无效文本')
+   ```
+
+测试样例在 [计算模块部分单元测试展示](#计算模块部分单元测试展示) 有展示

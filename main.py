@@ -1,3 +1,4 @@
+import os
 from typing import List, Dict
 
 import jieba.analyse
@@ -18,6 +19,8 @@ def get_similarity(source_path: str, copy_path: str) -> float:
 
 # 读取文件返回两个文件地址
 def read_file(path: str) -> str:
+    if not os.path.exists(path):
+        raise ValueError('文件不存在')
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
     return content
@@ -28,6 +31,8 @@ def get_tfidf_dict(content: str) -> Dict[str, float]:
     tfidf_dict = {}
     for word, tfidf in jieba.analyse.extract_tags(content, topK=0, withWeight=True):
         tfidf_dict[word] = tfidf
+    if len(tfidf_dict) == 0:
+        raise ValueError('无效文本')
     return tfidf_dict
 
 
@@ -56,11 +61,15 @@ def calculate_similarity(source_tfidf_list: List[float], copy_tfidf_list: List[f
 
 # 写入文件
 def write_consequence_to_file(similarity: float, path: str):
+    if not os.path.exists(path):
+        raise ValueError('文件不存在')
     with open(path, 'w', encoding='utf-8') as f:
         f.write(str(round(similarity, 2)))
 
 
 def main():
+    if len(sys.argv) < 4:
+        raise ValueError('参数缺失')
     [source_path, copy_path, ans_path] = sys.argv[1:]
     similarity = get_similarity(source_path, copy_path)
     write_consequence_to_file(similarity, ans_path)

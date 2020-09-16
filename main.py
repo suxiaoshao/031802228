@@ -17,7 +17,7 @@ def get_similarity(source_path: str, copy_path: str) -> float:
     return calculate_similarity(source_tfidf_list, copy_tfidf_list)
 
 
-# 读取文件返回两个文件地址
+# 读取文件返回文件内容
 def read_file(path: str) -> str:
     if not os.path.exists(path):
         raise ValueError('文件不存在')
@@ -40,6 +40,7 @@ def get_tfidf_dict(content: str) -> Dict[str, float]:
 def get_tfidf_list(source_tfidf_dict: Dict[str, float], copy_tfidf_dict: Dict[str, float]) -> List[List[float]]:
     source_tfidf_list = []
     copy_tfidf_list = []
+    # 遍历两个 dict 若一个不存在则设为0
     for item in source_tfidf_dict:
         source_tfidf_list.append(source_tfidf_dict[item])
         copy_tfidf_list.append(
@@ -55,6 +56,7 @@ def get_tfidf_list(source_tfidf_dict: Dict[str, float], copy_tfidf_dict: Dict[st
 def calculate_similarity(source_tfidf_list: List[float], copy_tfidf_list: List[float]) -> float:
     source_tfidf_array = np.array(source_tfidf_list)
     copy_tfidf_array = np.array(copy_tfidf_list)
+    # 使用生成的 ndarray 计算余弦相似度
     return np.dot(source_tfidf_array, copy_tfidf_array, out=None) / (
             np.linalg.norm(source_tfidf_array) * np.linalg.norm(copy_tfidf_array))
 
@@ -64,7 +66,7 @@ def write_consequence_to_file(similarity: float, path: str):
     if not os.path.exists(path):
         raise ValueError('文件不存在')
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(str(round(similarity, 2)))
+        f.write(str(round(similarity, 2)))  # 保留两位小数，并四舍五入
 
 
 def main():
